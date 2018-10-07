@@ -1,0 +1,4 @@
+function CarCollection() {
+
+}
+CarCollection.prototype = [];

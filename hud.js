@@ -7,7 +7,6 @@ function Hud() {
     this.current_lap_time = {value: null, dom: Dom.get('current_lap_time_value')};
     this.last_lap_time = {value: null, dom: Dom.get('last_lap_time_value')};
     this.fast_lap_time = {value: null, dom: Dom.get('fast_lap_time_value')};
-
 }
 
 /**

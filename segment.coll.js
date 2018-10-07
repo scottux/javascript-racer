@@ -16,17 +16,27 @@ SegmentCollection.prototype = [];
  * @param y
  */
 SegmentCollection.prototype.add = function (curve, y) {
-    var n = this.length;
+    var len = this.length;
+
     // add a new segment to the collection
-    this.push({
-        index: n,
-        p1: {world: {y: this.lastY(), z: n * this.SEGMENT_LENGTH}, camera: {}, screen: {}},
-        p2: {world: {y: y, z: (n + 1) * this.SEGMENT_LENGTH}, camera: {}, screen: {}},
+    this.push(new Segment({
+        index: len,
+        p1: {world: {y: this.lastY(), z: len * this.SEGMENT_LENGTH}, camera: {}, screen: {}},
+        p2: {world: {y: y, z: (len + 1) * this.SEGMENT_LENGTH}, camera: {}, screen: {}},
         curve: curve,
-        sprites: [],
-        cars: [],
-        color: Math.floor(n / this.RUMBLE_LENGTH) % 2 ? Game.currentStage.colors.DARK : Game.currentStage.colors.LIGHT
-    });
+        color: Math.floor(len / this.RUMBLE_LENGTH) % 2 ? Game.currentStage.colors.DARK : Game.currentStage.colors.LIGHT
+    }));
+};
+/**
+ *
+ * @param index
+ * @param sprite
+ * @param offset
+ */
+SegmentCollection.prototype.addSprite = function (index, sprite, offset) {
+    this[index].addSprite(sprite, offset);
+
+    return this;
 };
 /**
  *
