@@ -7,7 +7,7 @@ function Road(options) {
     this.MAX_CARS = options.maxCars || 200;
     this.segments = new SegmentCollection(options);
     this.totalLength = null;
-    this.cars = [];
+    this.cars = new CarCollection();
     this.playerZ = null; // player relative z distance from camera (computed)
     this.setMaxSpeed(options.step);
     this.width = options.roadWidth || 2000;
@@ -28,14 +28,14 @@ Road.prototype.setMaxSpeed = function (step) {
  * @returns {Road}
  */
 Road.prototype.addSprite = function (n, sprite, offset) {
-    this.segments[n].sprites.push({source: sprite, offset: offset});
+    this.segments[n].addSprite(sprite, offset);
 
     return this;
 };
 /**
  * Resets the roadside sprites.
  */
-Road.prototype.resetSprites = function resetSprites() {
+Road.prototype.resetSprites = function () {
     var n;
     var i;
     var side;
@@ -93,23 +93,24 @@ Road.prototype.resetSprites = function resetSprites() {
 Road.prototype.resetCars = function () {
     var n;
     var car;
-    var segment;
     var offset;
     var z;
-    var sprite;
-    var speed;
 
-    this.cars = [];
+    this.cars = new CarCollection();
     for (n = 0; n < this.MAX_CARS; n++) {
         offset = Math.random() * Util.randomChoice([-0.8, 0.8]);
         z = Math.floor(Math.random() * this.segments.length) * this.segments.SEGMENT_LENGTH;
-        sprite = Util.randomChoice(SPRITES.CARS);
-        speed = this.maxSpeed / 4 + Math.random() * this.maxSpeed / (sprite === SPRITES.SEMI ? 4 : 2);
-        car = {offset: offset, z: z, sprite: sprite, speed: speed};
-        segment = this.segments.find(car.z);
-        segment.cars.push(car);
-        this.cars.push(car);
+
+        car = new Car({offset: offset, z: z});
+        car.speed = this.maxSpeed / 4 + Math.random() * this.maxSpeed / (car.sprite === SPRITES.SEMI ? 4 : 2);
+        this.segments.find(car.z).addCar(car);
+        this.addCar(car);
     }
+};
+Road.prototype.addCar = function (car) {
+    this.cars.push(car);
+
+    return this;
 };
 /**
  * Add a road segment
