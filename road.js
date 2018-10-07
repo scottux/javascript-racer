@@ -10,6 +10,7 @@ function Road(options) {
     this.cars = [];
     this.playerZ = null; // player relative z distance from camera (computed)
     this.setMaxSpeed(options.step);
+    this.width = options.roadWidth || 2000;
 }
 /**
  * Set the mspeed limit.

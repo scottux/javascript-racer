@@ -80,14 +80,13 @@
     var skyOffset = 0;                          // current sky scroll offset
     var hillOffset = 0;                         // current hill scroll offset
     var treeOffset = 0;                         // current tree scroll offset
-    var roadWidth = 2000;                    // actually half the roads width, easier math if the road spans from -roadWidth to +roadWidth
 
     var road = new Road({
         segmentLength: 200,
         rumbleLength: 3,
         maxCars: 200,
         step: step,
-        roadWidth: roadWidth
+        roadWidth: 2000
     });
 //        var stats = Game.stats('fps');       // mr.doobs FPS counter
     var canvas = Dom.get('canvas');       // our canvas...
@@ -116,12 +115,7 @@
     var keyFaster = false;
     var keySlower = false;
 
-    var hud = {
-        speed: {value: null, dom: Dom.get('speed_value')},
-        current_lap_time: {value: null, dom: Dom.get('current_lap_time_value')},
-        last_lap_time: {value: null, dom: Dom.get('last_lap_time_value')},
-        fast_lap_time: {value: null, dom: Dom.get('fast_lap_time_value')}
-    };
+    var hud = new Hud();
 
 
     //=========================================================================
@@ -183,7 +177,7 @@
             sprites = images[1];
             reset();
             Dom.storage.fast_lap_time = Dom.storage.fast_lap_time || 180;
-            updateHud('fast_lap_time', formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
+            hud.update('fast_lap_time', formatTime(Util.toFloat(Dom.storage.fast_lap_time)));
         }
     });
 
@@ -306,22 +300,22 @@
                 currentLapTime = 0;
                 if (lastLapTime <= Util.toFloat(Dom.storage.fast_lap_time)) {
                     Dom.storage.fast_lap_time = lastLapTime;
-                    updateHud('fast_lap_time', formatTime(lastLapTime));
+                    hud.update('fast_lap_time', formatTime(lastLapTime));
                     Dom.addClassName('fast_lap_time', 'fastest');
                     Dom.addClassName('last_lap_time', 'fastest');
                 } else {
                     Dom.removeClassName('fast_lap_time', 'fastest');
                     Dom.removeClassName('last_lap_time', 'fastest');
                 }
-                updateHud('last_lap_time', formatTime(lastLapTime));
+                hud.update('last_lap_time', formatTime(lastLapTime));
                 Dom.show('last_lap_time');
             } else {
                 currentLapTime += dt;
             }
         }
 
-        updateHud('speed', 5 * Math.round(speed / 500));
-        updateHud('current_lap_time', formatTime(currentLapTime));
+        hud.update('speed', 5 * Math.round(speed / 500));
+        hud.update('current_lap_time', formatTime(currentLapTime));
     }
 
     //-------------------------------------------------------------------------
@@ -405,13 +399,6 @@
 
     //-------------------------------------------------------------------------
 
-    function updateHud(key, value) { // accessing DOM can be slow, so only do it if value has changed
-        if (hud[key].value !== value) {
-            hud[key].value = value;
-            Dom.set(hud[key].dom, value);
-        }
-    }
-
     function formatTime(dt) {
         var minutes = Math.floor(dt / 60);
         var seconds = Math.floor(dt - (minutes * 60));
@@ -459,8 +446,8 @@
             segment.fog = Util.exponentialFog(n / drawDistance, fogDensity);
             segment.clip = maxy;
 
-            Util.project(segment.p1, (playerX * roadWidth) - x, playerY + cameraHeight, position - (segment.looped ? road.totalLength : 0), cameraDepth, width, height, roadWidth);
-            Util.project(segment.p2, (playerX * roadWidth) - x - dx, playerY + cameraHeight, position - (segment.looped ? road.totalLength : 0), cameraDepth, width, height, roadWidth);
+            Util.project(segment.p1, (playerX * road.width) - x, playerY + cameraHeight, position - (segment.looped ? road.totalLength : 0), cameraDepth, width, height, road.width);
+            Util.project(segment.p2, (playerX * road.width) - x - dx, playerY + cameraHeight, position - (segment.looped ? road.totalLength : 0), cameraDepth, width, height, road.width);
 
             x = x + dx;
             dx = dx + segment.curve;
@@ -490,21 +477,21 @@
                 car = segment.cars[i];
                 sprite = car.sprite;
                 spriteScale = Util.interpolate(segment.p1.screen.scale, segment.p2.screen.scale, car.percent);
-                spriteX = Util.interpolate(segment.p1.screen.x, segment.p2.screen.x, car.percent) + (spriteScale * car.offset * roadWidth * width / 2);
+                spriteX = Util.interpolate(segment.p1.screen.x, segment.p2.screen.x, car.percent) + (spriteScale * car.offset * road.width * width / 2);
                 spriteY = Util.interpolate(segment.p1.screen.y, segment.p2.screen.y, car.percent);
-                Render.sprite(ctx, width, height, resolution, roadWidth, sprites, car.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip);
+                Render.sprite(ctx, width, height, resolution, road.width, sprites, car.sprite, spriteScale, spriteX, spriteY, -0.5, -1, segment.clip);
             }
 
             for (i = 0; i < segment.sprites.length; i++) {
                 sprite = segment.sprites[i];
                 spriteScale = segment.p1.screen.scale;
-                spriteX = segment.p1.screen.x + (spriteScale * sprite.offset * roadWidth * width / 2);
+                spriteX = segment.p1.screen.x + (spriteScale * sprite.offset * road.width * width / 2);
                 spriteY = segment.p1.screen.y;
-                Render.sprite(ctx, width, height, resolution, roadWidth, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
+                Render.sprite(ctx, width, height, resolution, road.width, sprites, sprite.source, spriteScale, spriteX, spriteY, (sprite.offset < 0 ? -1 : 0), -1, segment.clip);
             }
 
             if (segment === playerSegment) {
-                Render.player(ctx, width, height, resolution, roadWidth, sprites, speed / road.maxSpeed,
+                Render.player(ctx, width, height, resolution, road.width, sprites, speed / road.maxSpeed,
                     cameraDepth / road.playerZ,
                     width / 2,
                     (height / 2) - (cameraDepth / road.playerZ * Util.interpolate(playerSegment.p1.camera.y, playerSegment.p2.camera.y, playerPercent) * height / 2),
@@ -523,7 +510,7 @@
         canvas.width = width = Util.toInt(options.width, width);
         canvas.height = height = Util.toInt(options.height, height);
 //            lanes = Util.toInt(options.lanes, Game.currentStage.lanes);
-        roadWidth = Util.toInt(options.roadWidth, roadWidth);
+        road.width = Util.toInt(options.roadWidth, road.width);
         cameraHeight = Util.toInt(options.cameraHeight, cameraHeight);
         drawDistance = Util.toInt(options.drawDistance, drawDistance);
         fogDensity = Util.toInt(options.fogDensity, fogDensity);
@@ -549,7 +536,7 @@
 
 //        function refreshTweakUI() {
 //            Dom.get('lanes').selectedIndex = lanes - 1;
-//            Dom.get('currentRoadWidth').innerHTML = Dom.get('roadWidth').value = roadWidth;
+//            Dom.get('currentRoadWidth').innerHTML = Dom.get('roadWidth').value = road.width;
 //            Dom.get('currentCameraHeight').innerHTML = Dom.get('cameraHeight').value = cameraHeight;
 //            Dom.get('currentDrawDistance').innerHTML = Dom.get('drawDistance').value = drawDistance;
 //            Dom.get('currentFieldOfView').innerHTML = Dom.get('fieldOfView').value = fieldOfView;
